@@ -2,7 +2,7 @@
 
 Welcome to **MCPHack**, a collaborative agent-based tutor system built during the MCP Hackathon.
 
-Give it **any study material** — class notes, a textbook snippet, a GitHub repo, or even just a topic name like *"Photosynthesis"* or *"Lagrangian Mechanics"*. A team of intelligent agents will process the input to help you learn more effectively.
+Give it **any study material** — class notes, a textbook snippet, a GitHub repo (e.g. *M2* or *S2* gitlab repo), or just any topic name like *"Photosynthesis"* or *"Lagrangian Mechanics"*. A team of intelligent agents will process the input to help you learn more effectively.
 
 ---
 
