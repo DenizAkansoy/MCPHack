@@ -1,6 +1,74 @@
 import asyncio
 import random
 from tweet_service import get_tweets, post_tweet
+from pathlib import Path
+
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.sse import sse_client
+from mcp.client.stdio import stdio_client
+
+from autogen import LLMConfig
+from autogen.agentchat import AssistantAgent
+from autogen.mcp import create_toolkit
+import json
+import anyio
+import asyncio
+
+import os
+os.environ['OPENAI_API_KEY'] = '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'
+
+# Only needed for Jupyter notebooks
+import nest_asyncio
+nest_asyncio.apply()
+
+from autogen.agentchat.group import (
+    AgentNameTarget,
+    AgentTarget,
+    AskUserTarget,
+    ContextExpression,
+    ContextStr,
+    ContextStrLLMCondition,
+    ContextVariables,
+    ExpressionAvailableCondition,
+    ExpressionContextCondition,
+    GroupChatConfig,
+    GroupChatTarget,
+    Handoffs,
+    NestedChatTarget,
+    OnCondition,
+    OnContextCondition,
+    ReplyResult,
+    RevertToUserTarget,
+    SpeakerSelectionResult,
+    StayTarget,
+    StringAvailableCondition,
+    StringContextCondition,
+    StringLLMCondition,
+    TerminateTarget,
+)
+
+from autogen.agentchat.group.patterns import (
+    DefaultPattern,
+    ManualPattern,
+    AutoPattern,
+    RandomPattern,
+    RoundRobinPattern,
+)
+
+
+from autogen import ConversableAgent, UpdateSystemMessage
+from autogen.agents.experimental import DocAgent
+import os
+import copy
+from typing import Any, Dict, List
+from pydantic import BaseModel, Field
+
+
+from autogen.agentchat import initiate_group_chat, a_initiate_group_chat
+
+import os
+os.environ['OPENAI_API_KEY'] = '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'
+
 
 async def find_funny_tweets_with_high_engagement():
     """Search for funny tweets with high engagement"""
@@ -45,119 +113,75 @@ async def find_funny_tweets_with_high_engagement():
     return high_engagement_tweets[:10]  # Return top 10 for inspiration
 
 async def create_funny_tweet(inspiration_tweets):
-    """Create a funny tweet based on trending topics in the inspiration tweets"""
-    if not inspiration_tweets:
-        return "Just had a thought - why do we drive on parkways and park on driveways? #RandomThoughts #FunnyObservations"
+    """Create a funny tweet based on trending topics in the inspiration tweets using an LLM agent"""
     
-    # Extract topics and themes from the inspiration tweets
-    all_text = " ".join([tweet.get('text', '') for tweet in inspiration_tweets])
+    # Format inspiration tweets for the prompt
+    tweet_examples = []
+    for tweet in inspiration_tweets[:5]:  # Use top 5 tweets
+        text = tweet.get('text', '')
+        username = tweet.get('username', 'unknown')
+        engagement = tweet.get('engagement_score', 0)
+        tweet_examples.append(f"@{username}: \"{text}\" (Engagement: {engagement})")
     
-    # Simple templates for funny tweets
-    funny_templates = [
-        "That moment when {topic} and you just can't even... 😂 #FunnyThoughts",
-        "Pro tip: Never {action} when you're {situation}. Learned this the hard way! 🤣 #LifeLessons",
-        "Is it just me or is {topic} getting more ridiculous every day? #JustSaying #LOL",
-        "My relationship with {topic} is complicated. It's mostly me {action} and {topic} ignoring me. #FunnyButTrue",
-        "Breaking news: Scientists discover that {topic} is actually just {alternative}. Everyone is shocked. #MindBlown",
-        "Life hack: Instead of {normal_action}, try {silly_action}. Works 60% of the time, every time! #LifeHacks #Comedy",
-        "This is your daily reminder that {obvious_fact}. You're welcome. #PSA #Humor",
-        "Plot twist: {unexpected_scenario}. Nobody saw that coming! #PlotTwist #Funny",
-        "Today's goal: {simple_task}. Today's reality: {disaster_scenario}. #RelateableTruths"
-    ]
+    # Create the system message for the LLM agent
+    system_message = """
+    You are a Twitter humor agent who creates funny, engaging tweets.
     
-    # Fun topics we can use if we can't extract something good
-    fallback_topics = [
-        "social media addiction", "adulting", "Monday mornings", 
-        "autocorrect fails", "online shopping", "working from home",
-        "diet plans", "technology", "dating apps", "coffee dependency",
-        "streaming services", "food delivery", "weather forecasts"
-    ]
+    Guidelines:
+    - Create a short, funny tweet under 280 characters
+    - Just be funny
+    - Don't use overly complicated language
+    """
     
-    # Potential actions for templates
-    actions = [
-        "scrolling endlessly", "overthinking", "procrastinating", 
-        "online shopping", "binge-watching", "dancing", "cooking",
-        "sending texts", "taking selfies", "making decisions"
-    ]
+    # Create the user message with examples and instructions
+    user_message = f"""
+    Below are popular funny tweets with high engagement. Use these as inspiration to create a new, original funny tweet.
     
-    # Potential situations
-    situations = [
-        "sleep-deprived", "hungry", "caffeinated", "in a meeting",
-        "supposed to be working", "trying to impress someone", 
-        "already late", "on a diet", "in public"
-    ]
+    EXAMPLE TWEETS:
+    {chr(10).join(tweet_examples)}
     
-    # Try to extract trending topics from inspiration tweets, or use fallbacks
-    trending_topics = []
-    for tweet in inspiration_tweets:
-        text = tweet.get('text', '').lower()
-        # Skip retweets and very short content
-        if text.startswith('rt @') or len(text) < 20:
-            continue
+    Create ONE funny tweet that will get high engagement. Make it relatable and witty. Keep it under 280 characters.
+    Only output the tweet text itself, no other text or explanations.
+    """
+    
+    try:
+        # Import the OpenAI client for v1.0.0+
+        from openai import OpenAI
         
-        # Extract potential topic phrases (this is simplified)
-        words = text.split()
-        if len(words) > 3:
-            # Take a random 2-3 word phrase from the middle of the tweet
-            start_idx = random.randint(0, len(words) - 3)
-            phrase_length = random.randint(2, 3)
-            phrase = " ".join(words[start_idx:start_idx + phrase_length])
-            if len(phrase) > 5 and not phrase.startswith('@') and not phrase.startswith('#'):
-                trending_topics.append(phrase)
+        # Initialize the client
+        client = OpenAI(api_key=os.environ['OPENAI_API_KEY'])
+        
+        # Call the API with the updated syntax
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            temperature=1.0,
+            top_p=0.05,
+            max_tokens=150
+        )
+        
+        # Extract the content from the response
+        tweet = response.choices[0].message.content.strip()
+        
+        # Make sure tweet is under 280 characters
+        if len(tweet) > 280:
+            tweet = tweet[:277] + "..."
+        
+        print(f"LLM Agent generated tweet: {tweet}")
+        return tweet
     
-    # If we couldn't extract good topics, use fallbacks
-    if not trending_topics:
-        trending_topics = fallback_topics
-    
-    # Choose template and fill in the placeholders
-    template = random.choice(funny_templates)
-    
-    if "{topic}" in template:
-        template = template.replace("{topic}", random.choice(trending_topics))
-    
-    if "{action}" in template:
-        template = template.replace("{action}", random.choice(actions))
+    except Exception as e:
+        print(f"Error using LLM: {e}")
         
-    if "{situation}" in template:
-        template = template.replace("{situation}", random.choice(situations))
-        
-    if "{normal_action}" in template:
-        normal_actions = ["waking up early", "doing laundry", "making plans", "cooking dinner"]
-        template = template.replace("{normal_action}", random.choice(normal_actions))
-        
-    if "{silly_action}" in template:
-        silly_actions = ["sleeping in", "buying new clothes", "canceling last minute", "ordering takeout"]
-        template = template.replace("{silly_action}", random.choice(silly_actions))
-        
-    if "{obvious_fact}" in template:
-        obvious_facts = ["pizza is better than salad", "naps are underrated", "mondays are the worst", "chocolate fixes everything"]
-        template = template.replace("{obvious_fact}", random.choice(obvious_facts))
-        
-    if "{unexpected_scenario}" in template:
-        scenarios = [
-            "your plants are judging your life choices",
-            "your coffee maker is secretly plotting against you",
-            "your cat has been writing a novel about you",
-            "your phone is only pretending to need charging"
+        # Use the original fallback but return as a string
+        fallback = [
+            "funny funny heheharhar"
         ]
-        template = template.replace("{unexpected_scenario}", random.choice(scenarios))
         
-    if "{simple_task}" in template and "{disaster_scenario}" in template:
-        tasks = ["answer one email", "go to bed early", "drink more water", "organize one drawer"]
-        disasters = ["inbox now at 1,457 unread", "it's 3 AM and I'm on my fifth episode", "spilled water all over my laptop", "entire house now in chaos"]
-        template = template.replace("{simple_task}", random.choice(tasks))
-        template = template.replace("{disaster_scenario}", random.choice(disasters))
-        
-    if "{alternative}" in template:
-        alternatives = ["a conspiracy theory", "three kids in a trenchcoat", "completely optional", "actually cake"]
-        template = template.replace("{alternative}", random.choice(alternatives))
-    
-    # Add some emoji for good measure
-    emojis = ["😂", "🤣", "😅", "😆", "🙃", "🤦‍♀️", "🤷‍♂️", "💯", "👀", "🔥"]
-    if random.random() > 0.5 and not any(emoji in template for emoji in emojis):
-        template += f" {random.choice(emojis)}"
-    
-    return template
+        return fallback[0]
 
 async def main():
     try:
