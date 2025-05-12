@@ -15,7 +15,7 @@ import anyio
 import asyncio
 
 import os
-os.environ['OPENAI_API_KEY'] = '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'
+os.environ['OPENAI_API_KEY'] = '_'
 
 # Only needed for Jupyter notebooks
 import nest_asyncio
