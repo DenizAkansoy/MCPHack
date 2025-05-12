@@ -10,6 +10,7 @@ import os
 
 logger = logging.getLogger(__name__)
 
+
 USERNAME = 'liztansz'  # or os.getenv('TWITTER_USERNAME', 'liztansz')
 EMAIL = 'elizabethsztan@gmail.com'  # or os.getenv('TWITTER_EMAIL', 'elizabethsztan@gmail.com')
 PASSWORD = 'mcp-Nice-090'  # or os.getenv('TWITTER_PASSWORD', 'mcp-Nice-090')
