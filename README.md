@@ -1,25 +1,38 @@
-# MCPHack
-MCP Hackathon Repository
+# MCPHack: Multi-Agent Study Assistant
 
-User submits a class note, github repo, textbook snippet, or topic name (e.g., “Photosynthesis” or “Lagrangian Mechanics”). A team of agents processes this to:
+Welcome to **MCPHack**, a collaborative agent-based tutor system built during the MCP Hackathon.
 
-- Summarize the material
-- Expand it with external context
-- Generate practice questions
-- Evaluate user answers and correct misconceptions
+Give it **any study material** — class notes, a textbook snippet, a GitHub repo, or even just a topic name like *"Photosynthesis"* or *"Lagrangian Mechanics"*. A team of intelligent agents will process the input to help you learn more effectively.
 
-This is a *self-paced* AI tutor powered by a collaborative agent system.
+---
 
-Possible Agents:
+## What It Does
 
-SummarizerAgent: Condenses raw text into structured summaries
+MCPHack simulates a **self-paced AI tutor** using multiple specialized agents. Given an input, the agents will:
 
-ContextAgent: Enriches summary with external sources (Wikipedia, arXiv, mock APIs)
+- **Summarize** the core content
+- **Enrich** it with external context (Wikipedia, arXiv, etc.)
+- **Generate practice questions**
+- **Evaluate your answers** and correct misconceptions
+- **Explain concepts** through analogies and visuals
+- **Track your learning progress** and suggest next topics
 
-QuestionAgent: Creates practice questions (MCQ, short answer, true/false)
+---
 
-CheckerAgent: Evaluates user responses and provides corrections
+## Agent Roles
 
-ExplainerAgent: Gives extra help, analogies, or diagrams to aid understanding
+Each agent operates on a shared evolving context via the Model Context Protocol (MCP):
 
-ProgressAgent: Tracks what the user has mastered and suggests next topics
+| Agent            | Description                                                                 |
+|------------------|-----------------------------------------------------------------------------|
+| `SummarizerAgent` | Condenses raw input into structured, digestible points                     |
+| `ContextAgent`    | Expands the summary with relevant external sources or knowledge             |
+| `QuestionAgent`   | Generates practice questions (MCQs, short answers, true/false)              |
+| `CheckerAgent`    | Evaluates user answers and offers detailed corrections                     |
+| `ExplainerAgent`  | Provides follow-up explanations, analogies, or visual aids                  |
+| `ProgressAgent`   | Tracks what the user has learned and suggests what to study next            |
+
+
+## Why This Matters
+
+This project explores how Model Context Protocols can support **dynamic, modular, and interpretable AI systems** for education. Each agent can be reused, replaced, or extended independently.
