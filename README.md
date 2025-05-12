@@ -1,0 +1,2 @@
+# MCPHack
+MCP Hackathon Repository
