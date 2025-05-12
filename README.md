@@ -1,4 +1,4 @@
-# MCPHack: Multi-Agent Study Assistant
+# InfoSys Cambridge Hackathon: Multi-Agent Study Assistant
 
 Welcome to **MCPHack**, a collaborative agent-based tutor system built during the MCP Hackathon.
 
