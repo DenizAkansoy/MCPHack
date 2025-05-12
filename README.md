@@ -33,6 +33,30 @@ Each agent operates on a shared evolving context via the Model Context Protocol 
 | `ProgressAgent`   | Tracks what the user has learned and suggests what to study next            |
 
 
+## Diagram of workflow
+[User Input] 
+     |
+     v
+[Controller / Orchestrator]
+     |
+     +--> [SummarizerAgent] ------+
+     |                            |
+     +--> [ContextAgent] ---------+
+     |                            |
+     +--> [QuestionAgent] ---------+
+           |                        |
+           v                        v
+    [User Answers]             [User Feedback]
+           |                        |
+     +--> [CheckerAgent] -----------+
+     |                            |
+     +--> [ExplainerAgent] ---------+
+     |                            |
+     +--> [ProgressAgent] ---------+
+     |                            |
+     +--> [Next Topics/Suggestions]
+
+
 ## Why This Matters
 
 This project explores how Model Context Protocols can support **dynamic, modular, and interpretable AI systems** for education. Each agent can be reused, replaced, or extended independently.
